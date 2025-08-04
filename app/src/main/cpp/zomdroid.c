@@ -484,6 +484,12 @@ void zomdroid_event_joystick_connected() {
     });
 }
 
+void zomdroid_event_joystick_disconnected() {
+    ENQUEUE_EVENT({
+        e->type = JOYSTICK_DISCONNECTED;
+    });
+}
+
 void zomdroid_event_joystick_axis(int axis, float state) {
     ENQUEUE_EVENT({
         e->type = JOYSTICK_AXIS;

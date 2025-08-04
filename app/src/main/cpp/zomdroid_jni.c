@@ -125,3 +125,8 @@ JNIEXPORT void JNICALL
 Java_com_zomdroid_input_InputNativeInterface_sendJoystickConnected(JNIEnv *env, jclass clazz) {
     zomdroid_event_joystick_connected();
 }
+
+JNIEXPORT void JNICALL
+Java_com_zomdroid_input_InputNativeInterface_sendJoystickDisconnected(JNIEnv *env, jclass clazz) {
+    zomdroid_event_joystick_disconnected();
+}
