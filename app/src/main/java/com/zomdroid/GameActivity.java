@@ -7,12 +7,16 @@ import android.os.Bundle;
 import android.system.ErrnoException;
 import android.util.Log;
 import android.view.GestureDetector;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
+import android.widget.Button;
+import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -36,6 +40,11 @@ public class GameActivity extends AppCompatActivity {
     private Surface gameSurface;
     private static boolean isGameStarted = false;
     private GestureDetector gestureDetector;
+    
+    // Overlay for back gesture handling
+    private FrameLayout overlayContainer;
+    private View overlayView;
+    private boolean isOverlayVisible = false;
 
     @SuppressLint({"UnsafeDynamicallyLoadedCode", "ClickableViewAccessibility"})
     @Override
@@ -44,6 +53,9 @@ public class GameActivity extends AppCompatActivity {
 
         binding = ActivityGameBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        // Initialize overlay for back gesture handling
+        initializeOverlay();
 
         getWindow().setDecorFitsSystemWindows(false);
         final WindowInsetsController controller = getWindow().getInsetsController();
@@ -203,5 +215,56 @@ public class GameActivity extends AppCompatActivity {
                 return false;
             }
         });
+    }
+
+    private void initializeOverlay() {
+        // Create overlay container
+        overlayContainer = new FrameLayout(this);
+        overlayContainer.setLayoutParams(new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT));
+        overlayContainer.setVisibility(View.GONE);
+
+        // Inflate overlay layout
+        overlayView = LayoutInflater.from(this).inflate(R.layout.overlay_test, overlayContainer, false);
+        
+        // Setup close button
+        Button closeButton = overlayView.findViewById(R.id.btn_close_overlay);
+        closeButton.setOnClickListener(v -> hideOverlay());
+        
+        overlayContainer.addView(overlayView);
+        
+        // Add overlay to the root view
+        ViewGroup rootView = (ViewGroup) binding.getRoot();
+        rootView.addView(overlayContainer);
+    }
+
+    private void showOverlay() {
+        if (!isOverlayVisible) {
+            overlayContainer.setVisibility(View.VISIBLE);
+            isOverlayVisible = true;
+            Log.d(LOG_TAG, "Overlay shown");
+        }
+    }
+
+    private void hideOverlay() {
+        if (isOverlayVisible) {
+            overlayContainer.setVisibility(View.GONE);
+            isOverlayVisible = false;
+            Log.d(LOG_TAG, "Overlay hidden");
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        // Intercept back gesture and show overlay instead of closing app
+        if (isOverlayVisible) {
+            // If overlay is visible, hide it
+            hideOverlay();
+        } else {
+            // If overlay is not visible, show it
+            showOverlay();
+        }
+        // Don't call super.onBackPressed() to prevent app from closing
     }
 }
