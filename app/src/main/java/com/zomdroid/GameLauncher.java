@@ -5,6 +5,7 @@ import android.system.Os;
 import android.view.Surface;
 
 import com.zomdroid.input.InputNativeInterface;
+import com.zomdroid.input.GamepadManager;
 import com.zomdroid.game.GameInstance;
 
 import java.util.ArrayList;
@@ -62,7 +63,18 @@ public class GameLauncher {
         Os.setenv("ZOMDROID_GLES_MINOR", "2", true);*/
 
         initZomdroidWindow();
+        
+        // Always register virtual controller (slot 1)
         InputNativeInterface.sendJoystickConnected();
+        
+        // Register physical controllers if any are connected (slot 2+)
+        PhysicalControllerManager controllerManager = PhysicalControllerManager.getInstance();
+        if (controllerManager != null && controllerManager.hasPhysicalControllers()) {
+            // Register each connected physical controller
+            controllerManager.getConnectedControllers().forEach((deviceId, device) -> {
+                InputNativeInterface.sendPhysicalControllerConnected(deviceId);
+            });
+        }
 
         ArrayList<String> jvmArgs = gameInstance.getJvmArgsAsList();
         jvmArgs.add("-Dorg.lwjgl.opengl.libname=" + LauncherPreferences.requireSingleton().getRenderer().libName);

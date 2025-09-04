@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.system.ErrnoException;
 import android.util.Log;
 import android.view.GestureDetector;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
@@ -19,6 +20,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.zomdroid.input.GLFWBinding;
 import com.zomdroid.input.InputNativeInterface;
+import com.zomdroid.input.GamepadManager;
+import com.zomdroid.input.GamepadInputHandler;
 import com.zomdroid.databinding.ActivityGameBinding;
 import com.zomdroid.game.GameInstance;
 import com.zomdroid.game.GameInstanceManager;
@@ -26,6 +29,8 @@ import com.zomdroid.game.GameInstanceManager;
 import org.fmod.FMOD;
 
 import java.lang.ref.WeakReference;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class GameActivity extends AppCompatActivity {
@@ -36,6 +41,7 @@ public class GameActivity extends AppCompatActivity {
     private Surface gameSurface;
     private static boolean isGameStarted = false;
     private GestureDetector gestureDetector;
+    private Map<Integer, GamepadInputHandler> gamepadHandlers = new HashMap<>();
 
     @SuppressLint({"UnsafeDynamicallyLoadedCode", "ClickableViewAccessibility"})
     @Override
@@ -70,6 +76,57 @@ public class GameActivity extends AppCompatActivity {
         System.loadLibrary("fmodstudio");*/
 
         FMOD.init(this);
+
+        // Initialize gamepad manager
+        GamepadManager.init(this);
+        GamepadManager gamepadManager = GamepadManager.getInstance();
+        if (gamepadManager != null) {
+            gamepadManager.setStateListener(new GamepadManager.GamepadStateListener() {
+                @Override
+                public void onGamepadConnected(int deviceId) {
+                    Log.i(LOG_TAG, "Gamepad connected in game: " + deviceId);
+                    gamepadHandlers.put(deviceId, new GamepadInputHandler(deviceId));
+                    
+                    // Hide virtual controls when gamepad is connected
+                    if (binding.inputControlsV != null) {
+                        binding.inputControlsV.setVirtualControlsVisible(false);
+                        Log.d(LOG_TAG, "Virtual controls hidden due to gamepad connection");
+                    }
+                }
+
+                @Override
+                public void onGamepadDisconnected(int deviceId) {
+                    Log.i(LOG_TAG, "Gamepad disconnected in game: " + deviceId);
+                    gamepadHandlers.remove(deviceId);
+                    
+                    // Show virtual controls when no gamepads are connected
+                    if (gamepadHandlers.isEmpty() && binding.inputControlsV != null) {
+                        binding.inputControlsV.setVirtualControlsVisible(true);
+                        Log.d(LOG_TAG, "Virtual controls shown due to no gamepads");
+                    }
+                }
+
+                @Override
+                public void onVirtualControllerVisibilityChanged(boolean visible) {
+                    Log.d(LOG_TAG, "Virtual controller visibility changed: " + visible);
+                    if (binding.inputControlsV != null) {
+                        binding.inputControlsV.setVirtualControlsVisible(visible);
+                    }
+                }
+            });
+        }
+
+        // Initialize input controls view
+        if (binding.inputControlsV != null) {
+            binding.inputControlsV.loadControlElementsFromDisk();
+            binding.inputControlsV.setEditMode(false);
+            
+            // Set initial visibility based on current gamepad state
+            GamepadManager manager = GamepadManager.getInstance();
+            if (manager != null) {
+                binding.inputControlsV.setVirtualControlsVisible(!manager.hasGamepads());
+            }
+        }
 
 /*        gestureDetector = new GestureDetector(this, new GestureDetector.OnGestureListener() {
             private boolean showPress = false;
@@ -203,5 +260,52 @@ public class GameActivity extends AppCompatActivity {
                 return false;
             }
         });
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        // Handle gamepad button presses
+        for (GamepadInputHandler handler : gamepadHandlers.values()) {
+            if (handler.handleKeyEvent(event)) {
+                return true;
+            }
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        // Handle gamepad button releases
+        for (GamepadInputHandler handler : gamepadHandlers.values()) {
+            if (handler.handleKeyEvent(event)) {
+                return true;
+            }
+        }
+        return super.onKeyUp(keyCode, event);
+    }
+
+    @Override
+    public boolean onGenericMotionEvent(MotionEvent event) {
+        // Handle gamepad analog inputs (sticks, triggers)
+        for (GamepadInputHandler handler : gamepadHandlers.values()) {
+            if (handler.handleMotionEvent(event)) {
+                return true;
+            }
+        }
+        return super.onGenericMotionEvent(event);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        
+        // Clean up gamepad handlers
+        gamepadHandlers.clear();
+        
+        // Clean up gamepad manager if needed
+        GamepadManager manager = GamepadManager.getInstance();
+        if (manager != null) {
+            manager.setStateListener(null);
+        }
     }
 }

@@ -14,4 +14,8 @@ public class InputNativeInterface {
     public static native void sendJoystickButton(int button, boolean isPressed);
 
     public static native void sendJoystickConnected();
+
+    public static native void sendGamepadConnected(int joystickId);
+
+    public static native void sendGamepadDisconnected(int joystickId);
 }

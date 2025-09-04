@@ -14,7 +14,9 @@ typedef enum {
     JOYSTICK_DISCONNECTED,
     JOYSTICK_AXIS,
     JOYSTICK_DPAD,
-    JOYSTICK_BUTTON
+    JOYSTICK_BUTTON,
+    GAMEPAD_CONNECTED,
+    GAMEPAD_DISCONNECTED
 } EventType;
 
 typedef enum {
@@ -56,6 +58,21 @@ typedef struct {
 
 typedef struct {
     EventType type;
+    const char* gamepad_name;
+    const char* gamepad_guid;
+    int joystick_id;
+    int axis_count;
+    int button_count;
+    int hat_count;
+} GamepadConnectedEvent;
+
+typedef struct {
+    EventType type;
+    int joystick_id;
+} GamepadDisconnectedEvent;
+
+typedef struct {
+    EventType type;
     int axis;
     float state;
 } JoystickAxisEvent;
@@ -82,6 +99,8 @@ typedef union {
     JoystickAxisEvent joystickAxis;
     JoystickDpadEvent joystickDpad;
     JoystickButtonEvent joystickButton;
+    GamepadConnectedEvent gamepadConnected;
+    GamepadDisconnectedEvent gamepadDisconnected;
 } ZomdroidEvent;
 
 #define EVENT_QUEUE_MAX 255

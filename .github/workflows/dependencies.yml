@@ -1,0 +1,176 @@
+name: Dependencies & Security
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to scan'
+        required: true
+        default: 'master'
+        type: choice
+        options:
+          - master
+          - gamepad-experimental
+          - develop
+      scan_type:
+        description: 'Type of scan to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - dependency-check
+          - security-scan
+          - license-check
+  schedule:
+    # Run every Monday at 9 AM UTC
+    - cron: '0 9 * * 1'
+  push:
+    paths:
+      - 'gradle/libs.versions.toml'
+      - '**/build.gradle.kts'
+      - 'build.gradle.kts'
+
+jobs:
+  dependency-check:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.scan_type == 'all' || github.event.inputs.scan_type == 'dependency-check' || github.event_name != 'workflow_dispatch' }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.inputs.branch || github.ref }}
+
+    - name: Display scan configuration
+      run: |
+        echo "🔍 Running Dependency Check"
+        echo "📋 Configuration:"
+        echo "  Branch: ${{ github.event.inputs.branch || github.ref_name }}"
+        echo "  Scan Type: ${{ github.event.inputs.scan_type || 'all' }}"
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+
+    - name: Install Android SDK Components
+      run: |
+        echo y | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools"
+        echo y | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-35"
+        echo y | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;35.0.0"
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Generate dependency report
+      run: ./gradlew dependencies > dependencies.txt
+
+    - name: Run OWASP Dependency Check
+      uses: dependency-check/Dependency-Check_Action@main
+      id: depcheck
+      with:
+        project: 'zomdroid'
+        path: '.'
+        format: 'ALL'
+        args: >
+          --enableRetired
+          --enableExperimental
+          --suppression suppression.xml
+          --out reports
+
+    - name: Upload dependency check results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: dependency-check-report
+        path: reports
+        retention-days: 30
+
+    - name: Upload dependencies list
+      uses: actions/upload-artifact@v4
+      with:
+        name: dependencies-list
+        path: dependencies.txt
+        retention-days: 30
+
+  security-scan:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.scan_type == 'all' || github.event.inputs.scan_type == 'security-scan' || github.event_name != 'workflow_dispatch' }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.inputs.branch || github.ref }}
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  license-check:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.scan_type == 'all' || github.event.inputs.scan_type == 'license-check' || github.event_name != 'workflow_dispatch' }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.inputs.branch || github.ref }}
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+
+    - name: Install Android SDK Components
+      run: |
+        echo y | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools"
+        echo y | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-35"
+        echo y | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;35.0.0"
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Generate license report (if plugin available)
+      run: ./gradlew generateLicenseReport || echo "License plugin not configured"
+      continue-on-error: true
+
+    - name: Check for common license files
+      run: |
+        echo "=== License Analysis ===" > license-summary.txt
+        echo "Main project license:" >> license-summary.txt
+        if [ -f "LICENSE" ]; then
+          echo "Found LICENSE file" >> license-summary.txt
+          head -5 LICENSE >> license-summary.txt
+        else
+          echo "No LICENSE file found" >> license-summary.txt
+        fi
+        echo "" >> license-summary.txt
+        echo "Third-party licenses in dependencies:" >> license-summary.txt
+        ./gradlew dependencies | grep -i license || echo "No explicit license information found in dependencies" >> license-summary.txt
+
+    - name: Upload license summary
+      uses: actions/upload-artifact@v4
+      with:
+        name: license-summary
+        path: license-summary.txt
+        retention-days: 30

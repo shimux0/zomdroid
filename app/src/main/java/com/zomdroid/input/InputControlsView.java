@@ -38,6 +38,7 @@ public class InputControlsView extends View {
     GestureDetector gestureDetector;
     private Gson gson = new Gson();
     private SharedPreferences sharedPreferences;
+    private boolean virtualControlsVisible = true;
 
     private ElementSettingsController elementSettingsController;
 
@@ -122,10 +123,12 @@ public class InputControlsView extends View {
 
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
-        super.onDraw(canvas);
-
-        for (AbstractControlElement controlElement : controlElements) {
-            controlElement.draw(canvas);
+        // Only draw if virtual controls should be visible
+        if (virtualControlsVisible) {
+            super.onDraw(canvas);
+            for (AbstractControlElement controlElement : controlElements) {
+                controlElement.draw(canvas);
+            }
         }
     }
 
@@ -245,9 +248,36 @@ public class InputControlsView extends View {
         this.elementSettingsController = elementSettingsController;
     }
 
+    /**
+     * Set visibility of virtual controls based on physical controller state
+     */
+    public void setVirtualControlsVisible(boolean visible) {
+        if (virtualControlsVisible != visible) {
+            virtualControlsVisible = visible;
+            setVisibility(visible ? VISIBLE : GONE);
+            Log.d(LOG_TAG, "Virtual controls visibility changed to: " + visible);
+        }
+    }
+
+    public boolean areVirtualControlsVisible() {
+        return virtualControlsVisible;
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        // Only draw if virtual controls should be visible
+        if (virtualControlsVisible) {
+            super.onDraw(canvas);
+            for (AbstractControlElement controlElement : controlElements) {
+                controlElement.draw(canvas);
+            }
+        }
+    }
+
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
+        saveControlElementsToDisk();
     }
 
     public abstract static class ElementSettingsController {
@@ -259,4 +289,5 @@ public class InputControlsView extends View {
 
         protected abstract void hide();
     }
+}
 }

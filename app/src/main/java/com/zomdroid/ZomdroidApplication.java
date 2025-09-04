@@ -11,6 +11,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 
 import com.zomdroid.game.GameInstanceManager;
+import com.zomdroid.input.GamepadManager;
 
 public class ZomdroidApplication extends Application {
     private static final String LOG_TAG = "ZomdroidApplication";
@@ -79,6 +80,7 @@ public class ZomdroidApplication extends Application {
         inited = true;
         GameInstanceManager.init(this);
         LauncherPreferences.init(this);
+        GamepadManager.init(this);
         CrashHandler.init();
         updateLauncherVersion();
     }

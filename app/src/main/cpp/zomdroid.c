@@ -507,3 +507,23 @@ void zomdroid_event_joystick_button(int button, bool is_pressed) {
         e->joystickButton.is_pressed = is_pressed;
     });
 }
+
+void zomdroid_event_gamepad_connected(int joystick_id) {
+    ENQUEUE_EVENT({
+        e->type = GAMEPAD_CONNECTED;
+        // Gamepad uses Xbox controller mapping
+        e->gamepadConnected.gamepad_name = "Gamepad";
+        e->gamepadConnected.gamepad_guid = "11111111111111111111111111111111";
+        e->gamepadConnected.joystick_id = joystick_id;
+        e->gamepadConnected.axis_count = 6;
+        e->gamepadConnected.button_count = 14; // Xbox controller standard
+        e->gamepadConnected.hat_count = 1;
+    });
+}
+
+void zomdroid_event_gamepad_disconnected(int joystick_id) {
+    ENQUEUE_EVENT({
+        e->type = GAMEPAD_DISCONNECTED;
+        e->gamepadDisconnected.joystick_id = joystick_id;
+    });
+}
