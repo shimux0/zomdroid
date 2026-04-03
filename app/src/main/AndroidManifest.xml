@@ -30,6 +30,7 @@
         </activity>
         <activity
             android:name=".VrActivity"
+            android:exported="true"
             android:configChanges="screenSize|screenLayout|orientation|keyboardHidden|keyboard|navigation|uiMode|density"
             android:launchMode="singleTask"
             android:screenOrientation="landscape">
