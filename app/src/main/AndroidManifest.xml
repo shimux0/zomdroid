@@ -5,6 +5,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <uses-feature android:name="android.hardware.vr.headtracking" android:required="false" android:version="1" />
+
   <application
         android:name=".ZomdroidApplication"
         android:appCategory="game"
@@ -16,6 +18,11 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme">
+
+        <meta-data android:name="com.oculus.intent.category.VR" android:value="vr_only" />
+        <meta-data android:name="com.oculus.supportedDevices" android:value="quest3" />
+        <meta-data android:name="com.oculus.vr.focusaware" android:value="true" />
+
         <activity
             android:name=".LauncherActivity"
             android:exported="true"
@@ -33,7 +40,13 @@
             android:exported="true"
             android:configChanges="screenSize|screenLayout|orientation|keyboardHidden|keyboard|navigation|uiMode|density"
             android:launchMode="singleTask"
-            android:screenOrientation="landscape">
+            android:screenOrientation="landscape"
+            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="com.oculus.intent.category.VR" />
+            </intent-filter>
         </activity>
         <activity
             android:name=".ControlsEditorActivity">
