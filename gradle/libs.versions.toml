@@ -13,6 +13,7 @@ commonsIo = "2.18.0"
 commonsCompress = "1.27.1"
 xz = "1.10"
 legacySupportV4 = "1.0.0"
+openxrLoader = "1.1.57"
 
 [libraries]
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
@@ -28,6 +29,7 @@ commons-io = { group = "commons-io", name = "commons-io", version.ref = "commons
 commons-compress = { group = "org.apache.commons", name = "commons-compress", version.ref = "commonsCompress" }
 xz = { group = "org.tukaani", name = "xz", version.ref = "xz" }
 legacy-support-v4 = { group = "androidx.legacy", name = "legacy-support-v4", version.ref = "legacySupportV4" }
+openxr-loader = { group = "org.khronos.openxr", name = "openxr_loader_for_android", version.ref = "openxrLoader" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

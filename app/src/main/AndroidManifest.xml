@@ -29,6 +29,12 @@
             android:name=".GameActivity">
         </activity>
         <activity
+            android:name=".VrActivity"
+            android:configChanges="screenSize|screenLayout|orientation|keyboardHidden|keyboard|navigation|uiMode|density"
+            android:launchMode="singleTask"
+            android:screenOrientation="landscape">
+        </activity>
+        <activity
             android:name=".ControlsEditorActivity">
         </activity>
         <service

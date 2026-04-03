@@ -78,6 +78,7 @@ android {
     buildFeatures {
         viewBinding = true
         buildConfig = true
+        prefab = true
     }
     externalNativeBuild {
         cmake {
@@ -94,6 +95,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.openxr.loader)
     implementation(libs.gson)
     implementation(files("jars/fmod.jar"))
     implementation(libs.appcompat)
