@@ -146,6 +146,30 @@ static bool get_system(XrState* state) {
     return true;
 }
 
+static bool check_graphics_requirements(XrState* state) {
+    PFN_xrGetOpenGLESGraphicsRequirementsKHR xrGetOpenGLESGraphicsRequirementsKHR = NULL;
+    xrGetInstanceProcAddr(state->instance, "xrGetOpenGLESGraphicsRequirementsKHR",
+                          (PFN_xrVoidFunction*)&xrGetOpenGLESGraphicsRequirementsKHR);
+    if (!xrGetOpenGLESGraphicsRequirementsKHR) {
+        LOGE("xrGetOpenGLESGraphicsRequirementsKHR not available");
+        return false;
+    }
+
+    XrGraphicsRequirementsOpenGLESKHR gfx_reqs = {
+        .type = XR_TYPE_GRAPHICS_REQUIREMENTS_OPENGL_ES_KHR
+    };
+    XR_CHECK(xrGetOpenGLESGraphicsRequirementsKHR(state->instance, state->system_id, &gfx_reqs),
+             "xrGetOpenGLESGraphicsRequirementsKHR");
+    LOGI("OpenXR GLES requirements: %u.%u.%u - %u.%u.%u",
+         XR_VERSION_MAJOR(gfx_reqs.minApiVersionSupported),
+         XR_VERSION_MINOR(gfx_reqs.minApiVersionSupported),
+         XR_VERSION_PATCH(gfx_reqs.minApiVersionSupported),
+         XR_VERSION_MAJOR(gfx_reqs.maxApiVersionSupported),
+         XR_VERSION_MINOR(gfx_reqs.maxApiVersionSupported),
+         XR_VERSION_PATCH(gfx_reqs.maxApiVersionSupported));
+    return true;
+}
+
 static bool create_session(XrState* state) {
     XrGraphicsBindingOpenGLESAndroidKHR gfx_binding = {
         .type = XR_TYPE_GRAPHICS_BINDING_OPENGL_ES_ANDROID_KHR,
@@ -257,10 +281,11 @@ bool xr_init(XrState* state, JavaVM* vm, jobject activity) {
     memset(state, 0, sizeof(XrState));
     state->session_state = XR_SESSION_STATE_UNKNOWN;
 
-    if (!create_egl_context(state)) return false;
     if (!init_loader(vm, activity)) return false;
     if (!create_instance(state, vm, activity)) return false;
     if (!get_system(state)) return false;
+    if (!check_graphics_requirements(state)) return false;
+    if (!create_egl_context(state)) return false;
     if (!create_session(state)) return false;
     if (!create_swapchains(state)) return false;
 
