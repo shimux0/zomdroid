@@ -42,7 +42,7 @@ add_subdirectory(box64)
 target_compile_definitions(box64 PRIVATE BUILD_DYNAMIC)
 
 # OpenXR VR support
-find_package(openxr_loader REQUIRED CONFIG)
+find_package(OpenXR REQUIRED CONFIG)
 add_library(zomdroid_xr SHARED xr/xr_session.c xr/xr_renderer.c xr/xr_jni.c)
 target_include_directories(zomdroid_xr PRIVATE . xr)
-target_link_libraries(zomdroid_xr openxr_loader::openxr_loader EGL GLESv3 android log)
+target_link_libraries(zomdroid_xr OpenXR::openxr_loader EGL GLESv3 android log)
