@@ -1,5 +1,6 @@
 #include <jni.h>
 #include <pthread.h>
+#include <stdlib.h>
 #include <bits/stdatomic.h>
 
 #include "xr_session.h"
